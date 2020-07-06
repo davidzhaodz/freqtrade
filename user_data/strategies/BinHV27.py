@@ -29,9 +29,9 @@ class BinHV27(IStrategy):
     stoploss = -0.50
     ticker_interval = '5m'
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-        dataframe['rsi'] = numpy.nan_to_num(ta.RSI(dataframe, timeperiod=5))
-        rsiframe = DataFrame(dataframe['rsi']).rename(columns={'rsi': 'close'})
-        dataframe['emarsi'] = numpy.nan_to_num(ta.EMA(rsiframe, timeperiod=5))
+        dataframe['rsi'] = numpy.nan_to_num(ta.RSI(dataframe, timeperiod=5)) #RSI with NANs replaced
+        rsiframe = DataFrame(dataframe['rsi']).rename(columns={'rsi': 'close'}) #allows EMA to be appled to RSI
+        dataframe['emarsi'] = numpy.nan_to_num(ta.EMA(rsiframe, timeperiod=5)) #applies EMA to RSI
         dataframe['adx'] = numpy.nan_to_num(ta.ADX(dataframe))
         dataframe['minusdi'] = numpy.nan_to_num(ta.MINUS_DI(dataframe))
         minusdiframe = DataFrame(dataframe['minusdi']).rename(columns={'minusdi': 'close'})
@@ -44,7 +44,7 @@ class BinHV27(IStrategy):
         dataframe['fastsma'] = numpy.nan_to_num(ta.SMA(dataframe, timeperiod=120))
         dataframe['slowsma'] = numpy.nan_to_num(ta.SMA(dataframe, timeperiod=240))
         dataframe['bigup'] = dataframe['fastsma'].gt(dataframe['slowsma']) & ((dataframe['fastsma'] - dataframe['slowsma']) > dataframe['close'] / 300)
-        dataframe['bigdown'] = ~dataframe['bigup']
+        dataframe['bigdown'] = ~dataframe['bigup'] # ~ is an invert operator
         dataframe['trend'] = dataframe['fastsma'] - dataframe['slowsma']
         dataframe['preparechangetrend'] = dataframe['trend'].gt(dataframe['trend'].shift())
         dataframe['preparechangetrendconfirm'] = dataframe['preparechangetrend'] & dataframe['trend'].shift().gt(dataframe['trend'].shift(2))
@@ -54,7 +54,7 @@ class BinHV27(IStrategy):
         return dataframe
     def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         dataframe.loc[
-            dataframe['slowsma'].gt(0) &
+            dataframe['slowsma'].gt(0) & #greater than
             dataframe['close'].lt(dataframe['highsma']) &
             dataframe['close'].lt(dataframe['lowsma']) &
             dataframe['minusdi'].gt(dataframe['minusdiema']) &
